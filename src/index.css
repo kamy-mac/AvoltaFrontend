@@ -1,0 +1,180 @@
+@import url('./fonts.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #8F53F0;
+    --primary-dark: #7B3FDC;
+    --sand: #F5F3ED;
+    --day: #FFFFFF;
+    --night: #373737;
+  }
+
+  body {
+    font-family: 'Saans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  }
+  
+  h1, h2, h3 {
+    font-family: 'Avolta Display', Georgia, serif;
+  }
+
+  /* Typography Hierarchy */
+  h1, .h1 {
+    @apply text-h1 font-semibold text-night font-display;
+  }
+
+  h2, .h2 {
+    @apply text-h2 font-semibold text-night font-display;
+  }
+
+  h3, .h3 {
+    @apply text-h3 font-medium text-night;
+  }
+
+  h4, .h4 {
+    @apply text-h4 font-medium text-night;
+  }
+
+  p {
+    @apply text-base font-regular text-night;
+  }
+}
+
+@layer utilities {
+  .text-display {
+    @apply font-display font-semibold text-[3.5rem] leading-[1.2] tracking-[-0.02em];
+  }
+
+  .text-body-regular {
+    @apply text-base font-regular;
+  }
+
+  .text-body-medium {
+    @apply text-base font-medium;
+  }
+
+  .text-body-semibold {
+    @apply text-base font-semibold;
+  }
+
+  .text-small-regular {
+    @apply text-sm font-regular text-night/80;
+  }
+
+  .text-small-medium {
+    @apply text-sm font-medium text-night/80;
+  }
+
+  .text-small-semibold {
+    @apply text-sm font-semibold text-night/80;
+  }
+
+  /* Style 1: Audacieux (Bold) */
+  .style-audacieux {
+    @apply font-display text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight tracking-tight;
+  }
+
+  /* Style 2: Raffiné (Refined) */
+  .style-raffine {
+    @apply font-sans text-2xl md:text-3xl font-medium leading-relaxed tracking-normal;
+  }
+  
+  /* Animation for newsletter popup */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  /* Animation for initial loader */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+  }
+}
+
+/* Custom Tailwind classes */ 
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px; /* Épaisseur de la scrollbar horizontale */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Couleur de fond */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #8F53F0; /* Couleur primaire/violette */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6A0DAD; /* Couleur au survol */
+}
+
+/* Pour Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #8F53F0 #f1f1f1;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-day px-6 py-3 rounded-full font-medium hover:bg-primary-dark transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-night text-day px-6 py-3 rounded-full font-medium hover:bg-night/90 transition-colors;
+  }
+
+  .card {
+    @apply bg-day rounded-2xl shadow-lg p-6;
+  }
+
+  .section {
+    @apply py-16 px-4 sm:px-6 lg:px-8;
+  }
+
+  .container {
+    @apply max-w-7xl mx-auto;
+  }
+}
+
+/* Swiper customization */
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  display: none;
+}
+
+/* Initial loader */
+.initial-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--night);
+  z-index: 9999;
+}
+
+.initial-loader__spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+}

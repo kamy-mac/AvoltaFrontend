@@ -1,0 +1,49 @@
+{
+  "header": {
+    "news": "Nieuws",
+    "events": "Evenementen",
+    "contact": "Contact"
+  },
+  "news": {
+    "title": "Laatste nieuws",
+    "readMore": "Lees meer",
+    "share": "Delen",
+    "comments": "Reacties",
+    "likes": "Vind ik leuk",
+    "category": {
+      "news": "Nieuws",
+      "events": "Evenementen",
+      "press": "Persberichten"
+    }
+  },
+  "contact": {
+    "title": "Contacteer ons",
+    "team": "Ons team",
+    "address": "Adres",
+    "phone": "Telefoon",
+    "email": "E-mail"
+  },
+  "team": {
+    "title": "Ons Team",
+    "positions": {
+      "Directeur Général": "Algemeen Directeur",
+      "Directeur Commercial": "Commercieel Directeur",
+      "Directrice Marketing": "Marketing Directeur",
+      "Directeur Technique": "Technisch Directeur",
+      "Responsable Communication": "Communicatie Manager",
+      "Responsable Développement": "Ontwikkeling Manager",
+      "Responsable RH": "HR Manager",
+      "Responsable Innovation": "Innovatie Manager"
+    }
+  },
+  "admin": {
+    "publications": {
+      "title": "Mijn Publicaties",
+      "create": "Publicatie Maken",
+      "edit": "Bewerken",
+      "delete": "Verwijderen",
+      "confirmDelete": "Weet u zeker dat u deze publicatie wilt verwijderen?",
+      "noPublications": "Nog geen publicaties"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "header": {
+    "news": "News",
+    "events": "Events",
+    "contact": "Contact"
+  },
+  "news": {
+    "title": "Latest News",
+    "readMore": "Read More",
+    "share": "Share",
+    "comments": "Comments",
+    "likes": "Likes",
+    "category": {
+      "news": "News",
+      "events": "Events",
+      "press": "Press Releases"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "team": "Our Team",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email"
+  },
+  "team": {
+    "title": "Our Team",
+    "positions": {
+      "Directeur Général": "General Director",
+      "Directeur Commercial": "Commercial Director",
+      "Directrice Marketing": "Marketing Director",
+      "Directeur Technique": "Technical Director",
+      "Responsable Communication": "Communication Manager",
+      "Responsable Développement": "Development Manager",
+      "Responsable RH": "HR Manager",
+      "Responsable Innovation": "Innovation Manager"
+    }
+  },
+  "admin": {
+    "publications": {
+      "title": "My Publications",
+      "create": "Create Publication",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this publication?",
+      "noPublications": "No publications yet"
+    }
+  }
+}
