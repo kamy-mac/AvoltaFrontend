@@ -7,7 +7,11 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 
 // Base configuration
 // const API_BASE_URL = "http://avoltabackend-production.up.railway.app/api";
-const API_BASE_URL = 'https://votre-app-backend.railway.app/api';
+const API_BASE_URL = 'https://avoltabackend-production.up.railway.app/api';
+// Ou mieux avec une condition pour le développement vs production
+const API_BASE_URL = import.meta.env.PROD 
+  ? 'https://avoltabackend-production.up.railway.app/api'
+  : 'http://localhost:8090/api';
 const REQUEST_TIMEOUT = 15000; // 15 seconds timeout
 
 class ApiService {
