@@ -54,7 +54,7 @@ services:
     networks:
       - avolta-network
     environment:
-      - VITE_API_URL=http://localhost:8090/api
+      - VITE_API_URL=http://avoltabackend-production.up.railway.app/api
 
 networks:
   avolta-network:

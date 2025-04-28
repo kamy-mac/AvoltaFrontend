@@ -40,7 +40,7 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-Le backend sera accessible sur `http://localhost:8090/api`
+Le backend sera accessible sur `http://avoltabackend-production.up.railway.app/api`
 
 ## Lancement du Frontend
 
@@ -53,7 +53,7 @@ npm install
 
 3. Créer un fichier `.env` :
 ```
-VITE_API_URL=http://localhost:8090/api
+VITE_API_URL=http://avoltabackend-production.up.railway.app/api
 ```
 
 4. Lancer l'application :
