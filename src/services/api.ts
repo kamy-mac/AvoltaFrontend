@@ -6,7 +6,8 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 
 // Base configuration
-const API_BASE_URL = "http://localhost:8090/api";
+// const API_BASE_URL = "http://localhost:8090/api";
+BASE_URL: 'https://votre-app-backend.railway.app/api';
 const REQUEST_TIMEOUT = 15000; // 15 seconds timeout
 
 class ApiService {
