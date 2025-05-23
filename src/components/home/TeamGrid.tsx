@@ -219,7 +219,7 @@ const TeamCard = memo(
           loading="lazy" // Charge les images quand elles entrent dans le viewport
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = "public/images/LOGO_AVOLTA_FL_CORE_RGB.jpg";
+            target.src = "/images/LOGO_AVOLTA_FL_CORE_RGB.jpg";
             target.alt = "Image par défaut";
           }}
         />
@@ -344,7 +344,7 @@ const MemberModal = memo(
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "public/images/LOGO_AVOLTA_FL_CORE_RGB.jpg";
+                  target.src = "/images/LOGO_AVOLTA_FL_CORE_RGB.jpg";
                   target.alt = "Image par défaut";
                 }}
               />

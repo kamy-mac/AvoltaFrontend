@@ -61,7 +61,7 @@ export default function NewsCard({ post }: NewsCardProps) {
             aspectRatio="16/9"
             onError={(e) => {
               console.error("Erreur de chargement d'image:", post.imageUrl);
-              e.currentTarget.src = '../../../../public/images/FA_AVOLTA_NAV_CORE_RGB.jpg'; // Une image par défaut
+              e.currentTarget.src = '/images/FA_AVOLTA_NAV_CORE_RGB.jpg'; // Une image par défaut
             }}
           />
         ) : (

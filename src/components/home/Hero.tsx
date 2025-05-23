@@ -13,7 +13,7 @@ import motion2 from '/public/images/passionate.png';
 import motion3 from '/public/images/collaborative.png';
 import motion4 from '/public/images/inclusive.png';
 // Import video path
-const videoPath = '/public/images/Basel ident Footage (2).mp4';
+const videoPath = '/images/Basel ident Footage (2).mp4';
 
 // Données statistiques
 const stats = [
