@@ -50,14 +50,14 @@ export default function GallerySection() {
             <div className="w-full lg:w-3/5 grid grid-cols-2 gap-4">
               <div className="rounded-lg overflow-hidden h-48 sm:h-64 md:h-72">
                 <img
-                  src="/public/images/imagedecouvrehistoirecontainer.jpg"
+                  src="/images/imagedecouvrehistoirecontainer.jpg"
                   alt="Femme avec des écouteurs et des lunettes de soleil"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="rounded-lg overflow-hidden h-48 sm:h-64 md:h-72">
                 <img
-                  src="/public/images/continuezvotrevoyagecontainer.jpg"
+                  src="/images/continuezvotrevoyagecontainer.jpg"
                   alt="Fenêtre d'avion vue de l'intérieur"
                   className="w-full h-full object-cover"
                 />
@@ -161,7 +161,7 @@ export default function GallerySection() {
 
             <div className="bg-white p-4 rounded-lg shadow-md mb-6">
               <img
-                src="/public/images/Avolta-QR.png"
+                src="/images/Avolta-QR.png"
                 alt="QR Code Beekeeper"
                 className="w-64 h-64 object-contain"
               />

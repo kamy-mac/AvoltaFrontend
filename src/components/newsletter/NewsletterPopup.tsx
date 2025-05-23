@@ -211,7 +211,7 @@ export default function NewsletterPopup() {
         <div className="text-center mb-8">
           <div className="w-32 h-auto mx-auto mb-6">
             <img
-              src="/public/images/LOGO_AVOLTA_FL_CORE_RGB.jpg"
+              src="/images/LOGO_AVOLTA_FL_CORE_RGB.jpg"
               alt="Logo Avolta"
               className="w-full h-auto object-contain"
             />

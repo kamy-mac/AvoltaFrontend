@@ -283,14 +283,14 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             <div className="w-full lg:w-3/5 grid grid-cols-2 gap-4">
               <div className="rounded-lg overflow-hidden h-48 sm:h-64 md:h-72">
                 <img
-                  src="/public/images/imagedecouvrehistoirecontainer.jpg"
+                  src="/images/imagedecouvrehistoirecontainer.jpg"
                   alt="Femme avec des écouteurs et des lunettes de soleil"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="rounded-lg overflow-hidden h-48 sm:h-64 md:h-72">
                 <img
-                  src="/public/images/continuezvotrevoyagecontainer.jpg"
+                  src="/images/continuezvotrevoyagecontainer.jpg"
                   alt="Fenêtre d'avion vue de l'intérieur"
                   className="w-full h-full object-cover"
                 />

@@ -335,7 +335,7 @@ export default function NewsletterSection() {
 
             <div className="hidden lg:block lg:col-span-5 relative group">
               <img
-                src="/public/images/tyler-nix-sh3LSNbyj7k-unsplash_774x550.jpg"
+                src="/images/tyler-nix-sh3LSNbyj7k-unsplash_774x550.jpg"
                 alt="Newsletter Avolta"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
