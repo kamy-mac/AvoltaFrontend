@@ -6,19 +6,15 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 
 // Base configuration
-
-// Ou mieux avec une condition pour le développement vs production
 const API_BASE_URL = import.meta.env.PROD 
   ? 'https://avoltabackend-production.up.railway.app/api/api'
   : 'http://localhost:8090/api';
 const REQUEST_TIMEOUT = 15000; // 15 seconds timeout
 
 class ApiService {
-  
-  
   private api: AxiosInstance;
   private static instance: ApiService;
-  post: any; // Replace 'Mock<any, any, any>' with 'any' or define/import 'Mock' if needed
+  post: any;
   setToken: any;
 
   private constructor() {
@@ -72,16 +68,13 @@ class ApiService {
         let errorMessage = "An unexpected error occurred";
 
         if ((error.response?.data as { message?: string })?.message) {
-          // Use server-side error message if available
           errorMessage =
             (error.response?.data as { message?: string })?.message ||
             errorMessage;
         } else if (error.message) {
-          // Use axios error message
           errorMessage = error.message;
         }
 
-        // Create a new error with the enhanced message
         const enhancedError = new Error(errorMessage);
         return Promise.reject(enhancedError);
       }
@@ -94,6 +87,73 @@ class ApiService {
     }
     return ApiService.instance;
   }
+
+  /**
+   * Get the correct image URL with proper base path
+   * @param filename The filename returned by the upload endpoint
+   * @returns Complete URL to access the image
+   */
+  public getImageUrl(filename: string): string {
+    if (!filename) return '';
+    
+    // Si le filename contient déjà l'URL complète, le retourner tel quel
+    if (filename.startsWith('http')) {
+      return filename;
+    }
+    
+    // Construire l'URL correcte pour les images
+    const baseUrl = import.meta.env.PROD 
+      ? 'https://avoltabackend-production.up.railway.app/api/api'
+      : 'http://localhost:8090/api';
+    
+    return `${baseUrl}/uploads/${filename}`;
+  }
+
+  /**
+   * Upload an image file with proper URL handling
+   * @param file Image file to upload
+   * @returns Response with the uploaded file URL
+   */
+  public async uploadImage(file: File): Promise<AxiosResponse> {
+    try {
+      console.log("Sending upload file request");
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await this.api.post("/upload/image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      // Log pour déboguer la réponse
+      console.log("Upload response:", response.data);
+      
+      return response;
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get image with authentication
+   * @param filename Image filename
+   * @returns Blob response for the image
+   */
+  public async getImage(filename: string): Promise<Blob> {
+    try {
+      const response = await this.api.get(`/uploads/${filename}`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Get image ${filename} failed:`, error);
+      throw error;
+    }
+  }
+
+  // ... resto de vos méthodes existantes ...
 
   // Authentication
   public async login(email: string, password: string): Promise<AxiosResponse> {
@@ -126,19 +186,17 @@ class ApiService {
     }
   }
 
-  // Cette fonction utilise la bonne route pour récupérer les détails d'une publication
-public async getPublicationById(id: string): Promise<AxiosResponse> {
-  try {
-    console.log(`API Request: GET /publications/${id}`);
-    // Ajouter des logs supplémentaires pour le débogage
-    const response = await this.api.get(`/publications/${id}`);
-    console.log("API getPublicationById raw response:", response);
-    return response;
-  } catch (error) {
-    console.error(`Get publication ${id} request failed:`, error);
-    throw error;
+  public async getPublicationById(id: string): Promise<AxiosResponse> {
+    try {
+      console.log(`API Request: GET /publications/${id}`);
+      const response = await this.api.get(`/publications/${id}`);
+      console.log("API getPublicationById raw response:", response);
+      return response;
+    } catch (error) {
+      console.error(`Get publication ${id} request failed:`, error);
+      throw error;
+    }
   }
-}
 
   public async createPublication(data: any): Promise<AxiosResponse> {
     try {
@@ -149,10 +207,7 @@ public async getPublicationById(id: string): Promise<AxiosResponse> {
     }
   }
 
-  public async updatePublication(
-    id: string,
-    data: any
-  ): Promise<AxiosResponse> {
+  public async updatePublication(id: string, data: any): Promise<AxiosResponse> {
     try {
       return await this.api.put(`/publications/${id}`, data);
     } catch (error) {
@@ -201,15 +256,9 @@ public async getPublicationById(id: string): Promise<AxiosResponse> {
     }
   }
 
-  public async addComment(
-    publicationId: string,
-    data: any
-  ): Promise<AxiosResponse> {
+  public async addComment(publicationId: string, data: any): Promise<AxiosResponse> {
     try {
-      return await this.api.post(
-        `/publications/${publicationId}/comments`,
-        data
-      );
+      return await this.api.post(`/publications/${publicationId}/comments`, data);
     } catch (error) {
       console.error(
         `Add comment to publication ${publicationId} request failed:`,
@@ -219,14 +268,9 @@ public async getPublicationById(id: string): Promise<AxiosResponse> {
     }
   }
 
-  public async deleteComment(
-    publicationId: string,
-    commentId: string
-  ): Promise<AxiosResponse> {
+  public async deleteComment(publicationId: string, commentId: string): Promise<AxiosResponse> {
     try {
-      return await this.api.delete(
-        `/publications/${publicationId}/comments/${commentId}`
-      );
+      return await this.api.delete(`/publications/${publicationId}/comments/${commentId}`);
     } catch (error) {
       console.error(`Delete comment ${commentId} request failed:`, error);
       throw error;
@@ -256,16 +300,12 @@ public async getPublicationById(id: string): Promise<AxiosResponse> {
     try {
       return await this.api.delete(`/newsletter/unsubscribe/${email}`);
     } catch (error) {
-      console.error(
-        `Newsletter unsubscribe for ${email} request failed:`,
-        error
-      );
+      console.error(`Newsletter unsubscribe for ${email} request failed:`, error);
       throw error;
     }
   }
 
   // Users
-
   public async getUsers(): Promise<AxiosResponse> {
     try {
       return await this.api.get("/users");
@@ -302,21 +342,15 @@ public async getPublicationById(id: string): Promise<AxiosResponse> {
     }
   }
 
-  public async getPublicationsByCategory(
-    category: string
-  ): Promise<AxiosResponse> {
+  public async getPublicationsByCategory(category: string): Promise<AxiosResponse> {
     try {
       return await this.api.get(`/publications/public/category/${category}`);
     } catch (error) {
-      console.error(
-        `Get publications by category ${category} request failed:`,
-        error
-      );
+      console.error(`Get publications by category ${category} request failed:`, error);
       throw error;
     }
   }
 
-  //  User (super admin) spendid Publications
   public async getPendingPublications(): Promise<AxiosResponse> {
     try {
       return await this.api.get("/publications/pending");
@@ -353,56 +387,27 @@ public async getPublicationById(id: string): Promise<AxiosResponse> {
     }
   }
 
-  public async updateUserStatus(
-    id: string,
-    status: "ACTIVE" | "INACTIVE"
-  ): Promise<AxiosResponse> {
+  public async updateUserStatus(id: string, status: "ACTIVE" | "INACTIVE"): Promise<AxiosResponse> {
     try {
       return await this.api.put(`/users/${id}/status?status=${status}`);
     } catch (error) {
-      console.error(
-        `Update user ${id} status to ${status} request failed:`,
-        error
-      );
+      console.error(`Update user ${id} status to ${status} request failed:`, error);
       throw error;
     }
   }
 
-/**
- * Upload an image file
- * @param file Image file to upload
- * @returns Response with the uploaded file URL
- */
-public async uploadImage(file: File): Promise<AxiosResponse> {
-  try {
-    console.log("Sending upload file request");
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    return await this.api.post("/upload/image", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    });
-  } catch (error) {
-    console.error("Image upload failed:", error);
-    throw error;
+  public async uploadFile(formData: FormData): Promise<AxiosResponse> {
+    try {
+      return await this.api.post("/upload/image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+    } catch (error) {
+      console.error("File upload request failed:", error);
+      throw error;
+    }
   }
 }
-// Dans src/services/api.ts
-public async uploadFile(formData: FormData): Promise<AxiosResponse> {
-  try {
-    return await this.api.post("/upload/image", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    });
-  } catch (error) {
-    console.error("File upload request failed:", error);
-    throw error;
-  }
-}
-}
-
 
 export default ApiService.getInstance();
