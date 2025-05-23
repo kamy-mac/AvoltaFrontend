@@ -263,7 +263,7 @@ export default function NewsletterSection() {
           {/* Côté droit - Image avec overlay et effet */}
           <div className="w-full md:w-3/5 h-72 md:h-96 relative overflow-hidden group">
             <img
-              src="public/images/Destination2027_composant.jpeg"
+              src="/images/Frame64_2.png"
               alt="Personne au sommet d'une montagne contemplant le paysage"
               className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
             />
