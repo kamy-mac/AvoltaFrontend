@@ -392,7 +392,7 @@ public async uploadImage(file: File): Promise<AxiosResponse> {
 // Dans src/services/api.ts
 public async uploadFile(formData: FormData): Promise<AxiosResponse> {
   try {
-    return await this.api.post("/api/upload/image", formData, {
+    return await this.api.post("/upload/image", formData, {
       headers: {
         "Content-Type": "multipart/form-data"
       }
