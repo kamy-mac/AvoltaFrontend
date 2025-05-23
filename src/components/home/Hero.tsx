@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import { LazyImage } from '../../utils/lazyLoad';
 
 // Import local images
-import banner1 from '/public/images/barner 4.jpg';
-import banner2 from '/public/images/barner 6.jpg';
+import banner1 from '/public/images/barner4.jpg';
+import banner2 from '/public/images/barner6.jpg';
 import banner3 from '/public/images/barner5.jpg';
 import banner4 from '/public/images/barner2.jpg';
 import motion1 from '/public/images/brave.png';
@@ -43,7 +43,7 @@ const stats = [
   }
 ];
 
-// Nos valeurs
+// nosvaleurs
 const features = [
   {
     title: 'Courageux',
@@ -237,7 +237,7 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Nos valeurs */}
+      {/* nosvaleurs */}
       <div className={`relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 transform transition-all duration-1000 ease-out ${
         isVisible[2] ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
       }`}>

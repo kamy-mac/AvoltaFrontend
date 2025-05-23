@@ -132,7 +132,7 @@ export default function BacAirportSection() {
               
               <div className="relative rounded-3xl overflow-hidden">
                 <LazyImage
-                  src="public\images\newslette.jpg"
+                  src="/public/images/newslette.jpg"
                   alt="Brussels Airport"
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                   aspectRatio="16/9"

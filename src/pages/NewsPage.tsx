@@ -239,14 +239,14 @@ export default function NewsPage() {
           {/* <!-- Côté droit - Image --> */}
           <div className="w-full md:w-2/6 h-72 md:h-96 relative">
             <img
-              src="public\images\nos valeurs2.png"
+              src="/public/images/nosvaleurs2.png"
               alt="Personne au sommet d'une montagne contemplant le paysage"
               className="w-full h-full object-cover"
             />
           </div>
           <div className="w-full md:w-2/6 h-72 md:h-96 relative">
             <img
-              src="public\images\nosvaleur3.png"
+              src="/public/images/nosvaleur3.png"
               alt="Personne au sommet d'une montagne contemplant le paysage"
               className="w-full h-full object-cover"
             />
