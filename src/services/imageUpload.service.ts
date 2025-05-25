@@ -1,9 +1,8 @@
 // src/services/imageUpload.service.ts
-import { API_CONFIG } from '../config/api-config';
+
+import api from './api';
 
 export interface ImageUploadResponse {
-  width: number;
-  height: number;
   imageUrl: string;
   publicId: string;
   originalFileName: string;
@@ -14,57 +13,55 @@ export interface ImageUploadResponse {
   };
 }
 
-interface ApiResponse<T> {
-  success: boolean;
+export interface ImageUploadError {
   message: string;
-  data: T;
-  timestamp: string;
+  code?: string;
 }
 
 class ImageUploadService {
-  private readonly baseUrl = API_CONFIG.BASE_URL;
-
   /**
-   * Upload une image vers Cloudinary via le backend
+   * Upload une image vers Cloudinary via l'API backend
    */
   async uploadImage(file: File): Promise<ImageUploadResponse> {
     try {
       // Validation côté client
       this.validateImageFile(file);
 
+      // Création du FormData
       const formData = new FormData();
       formData.append('file', file);
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Token d\'authentification manquant');
-      }
-
-      const response = await fetch(`${this.baseUrl}/images/upload`, {
-        method: 'POST',
+      // Appel API
+      const response = await api.post('/images/upload', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: formData,
+        // Progress tracking si nécessaire
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `Erreur HTTP: ${response.status}`
-        );
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || 'Erreur lors de l\'upload');
       }
-
-      const result: ApiResponse<ImageUploadResponse> = await response.json();
+    } catch (error: any) {
+      console.error('Erreur upload image:', error);
       
-      if (!result.success) {
-        throw new Error(result.message || 'Erreur lors de l\'upload');
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error('Erreur inconnue lors de l\'upload');
       }
-
-      return result.data;
-    } catch (error) {
-      console.error('Erreur lors de l\'upload d\'image:', error);
-      throw error;
     }
   }
 
@@ -73,146 +70,161 @@ class ImageUploadService {
    */
   async deleteImage(publicId: string): Promise<void> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Token d\'authentification manquant');
+      const response = await api.delete(`/images/${publicId}`);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Erreur lors de la suppression');
       }
-
-      const response = await fetch(`${this.baseUrl}/images/${encodeURIComponent(publicId)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `Erreur HTTP: ${response.status}`
-        );
+    } catch (error: any) {
+      console.error('Erreur suppression image:', error);
+      
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else {
+        throw new Error('Erreur lors de la suppression de l\'image');
       }
-    } catch (error) {
-      console.error('Erreur lors de la suppression d\'image:', error);
-      throw error;
     }
   }
 
   /**
-   * Génère une URL d'image transformée
-   */
-  getTransformedImageUrl(
-    publicId: string, 
-    width: number, 
-    height: number, 
-    cropMode: string = 'fill'
-  ): string {
-    try {
-      // Pour Cloudinary, on peut construire l'URL directement
-      // Format: https://res.cloudinary.com/{cloud_name}/image/upload/{transformations}/{public_id}
-      const baseCloudinaryUrl = 'https://res.cloudinary.com/dlskkweya/image/upload';
-      const transformations = `w_${width},h_${height},c_${cropMode},q_auto,f_auto`;
-      return `${baseCloudinaryUrl}/${transformations}/${publicId}`;
-    } catch (error) {
-      console.error('Erreur lors de la génération d\'URL transformée:', error);
-      // Retourner l'URL de base en cas d'erreur
-      return `https://res.cloudinary.com/dlskkweya/image/upload/${publicId}`;
-    }
-  }
-
-  /**
-   * Validation des fichiers côté client
+   * Validation côté client
    */
   private validateImageFile(file: File): void {
+    // Vérifier que c'est bien un fichier
     if (!file) {
       throw new Error('Aucun fichier sélectionné');
     }
 
-    // Vérifier le type de fichier
+    // Vérifier le type MIME
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      throw new Error('Format d\'image non supporté. Formats acceptés: JPEG, PNG, GIF, WebP');
+      throw new Error('Format de fichier non supporté. Utilisez JPEG, PNG, GIF ou WebP.');
     }
 
     // Vérifier la taille (10MB max)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      throw new Error('La taille du fichier ne doit pas dépasser 10MB');
+      throw new Error('Le fichier est trop volumineux. Taille maximum: 10MB.');
+    }
+
+    // Vérifier le nom du fichier
+    if (file.name.length > 255) {
+      throw new Error('Le nom du fichier est trop long.');
     }
   }
 
   /**
-   * Prévisualise une image avant upload
+   * Redimensionne une image côté client avant upload (optionnel)
    */
-  previewImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (!file) {
-        reject(new Error('Aucun fichier fourni'));
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        resolve(result);
-      };
-      reader.onerror = () => {
-        reject(new Error('Erreur lors de la lecture du fichier'));
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  /**
-   * Compresse une image avant upload (optionnel)
-   */
-  async compressImage(file: File, maxWidth: number = 1200, quality: number = 0.8): Promise<File> {
+  async resizeImage(file: File, maxWidth: number = 1200, maxHeight: number = 800, quality: number = 0.8): Promise<File> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
 
       img.onload = () => {
-        try {
-          // Calculer les nouvelles dimensions
-          const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-          const newWidth = img.width * ratio;
-          const newHeight = img.height * ratio;
-
-          // Redimensionner le canvas
-          canvas.width = newWidth;
-          canvas.height = newHeight;
-
-          // Dessiner l'image redimensionnée
-          ctx?.drawImage(img, 0, 0, newWidth, newHeight);
-
-          // Convertir en blob
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                const compressedFile = new File([blob], file.name, {
-                  type: file.type,
-                  lastModified: Date.now(),
-                });
-                resolve(compressedFile);
-              } else {
-                reject(new Error('Erreur lors de la compression'));
-              }
-            },
-            file.type,
-            quality
-          );
-        } catch (error) {
-          reject(error);
+        // Calculer les nouvelles dimensions
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
         }
+
+        // Configurer le canvas
+        canvas.width = width;
+        canvas.height = height;
+
+        // Dessiner l'image redimensionnée
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convertir en blob
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const resizedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(resizedFile);
+            } else {
+              reject(new Error('Erreur lors du redimensionnement'));
+            }
+          },
+          file.type,
+          quality
+        );
       };
 
       img.onerror = () => {
-        reject(new Error('Erreur lors du chargement de l\'image'));
+        reject(new Error('Impossible de charger l\'image'));
       };
 
       img.src = URL.createObjectURL(file);
     });
+  }
+
+  /**
+   * Génère un aperçu de l'image
+   */
+  generatePreview(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          resolve(e.target.result as string);
+        } else {
+          reject(new Error('Erreur lors de la génération de l\'aperçu'));
+        }
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Erreur lors de la lecture du fichier'));
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Génère une URL Cloudinary transformée
+   */
+  getTransformedUrl(publicId: string, width?: number, height?: number, crop: string = 'fill'): string {
+    // Cette fonction peut être utilisée pour générer des URLs avec transformations
+    // côté client, mais il est recommandé de le faire côté serveur
+    const baseUrl = 'https://res.cloudinary.com/dlskkweya/image/upload/';
+    
+    let transformations = '';
+    if (width && height) {
+      transformations = `w_${width},h_${height},c_${crop}/`;
+    } else if (width) {
+      transformations = `w_${width}/`;
+    } else if (height) {
+      transformations = `h_${height}/`;
+    }
+    
+    return `${baseUrl}${transformations}${publicId}`;
+  }
+
+  /**
+   * Utilitaire pour formater la taille des fichiers
+   */
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }
 

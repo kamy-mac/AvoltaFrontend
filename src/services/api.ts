@@ -9,7 +9,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 const API_BASE_URL = import.meta.env.PROD 
   ? 'https://avoltabackend-production.up.railway.app/api/api'
   : 'http://localhost:8090/api';
-const REQUEST_TIMEOUT = 15000; // 15 seconds timeout
+const REQUEST_TIMEOUT = 30000; // 15 seconds timeout
 
 class ApiService {
   private api: AxiosInstance;

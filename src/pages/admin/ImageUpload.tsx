@@ -1,280 +1,276 @@
-// src/components/admin/ImageUpload.tsx
+
+
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2, Check, AlertCircle } from 'lucide-react';
-import imageUploadService from '../../services/imageUpload.service';
+import { Upload, X, Image as ImageIcon, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import imageUploadService, { ImageUploadResponse } from '../../services/imageUpload.service';
 
 interface ImageUploadProps {
-  onImageUploaded: (imageUrl: string, publicId: string) => void;
-  onImageRemoved?: () => void;
+  onImageUpload: (imageData: ImageUploadResponse) => void;
+  onImageRemove?: () => void;
   currentImageUrl?: string;
-  className?: string;
+  disabled?: boolean;
   maxSizeMB?: number;
-  aspectRatio?: 'square' | '16:9' | '4:3' | 'auto';
+  acceptedFormats?: string[];
   showPreview?: boolean;
+  className?: string;
 }
 
-interface UploadStatus {
-  type: 'idle' | 'uploading' | 'success' | 'error';
-  message?: string;
-  progress?: number;
+interface UploadState {
+  isUploading: boolean;
+  progress: number;
+  error: string | null;
+  success: string | null;
 }
 
 export default function ImageUpload({
-  onImageUploaded,
-  onImageRemoved,
+  onImageUpload,
+  onImageRemove,
   currentImageUrl,
-  className = '',
+  disabled = false,
   maxSizeMB = 10,
-  aspectRatio = 'auto',
-  showPreview = true
+  acceptedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  showPreview = true,
+  className = ''
 }: ImageUploadProps) {
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ type: 'idle' });
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  const [uploadState, setUploadState] = useState<UploadState>({
+    isUploading: false,
+    progress: 0,
+    error: null,
+    success: null
+  });
+  
   const [dragActive, setDragActive] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Aspect ratio classes
-  const aspectRatioClasses = {
-    square: 'aspect-square',
-    '16:9': 'aspect-video',
-    '4:3': 'aspect-[4/3]',
-    auto: 'min-h-[200px]'
-  };
+  // Reset des messages après 3 secondes
+  const resetMessages = useCallback(() => {
+    setTimeout(() => {
+      setUploadState(prev => ({ ...prev, error: null, success: null }));
+    }, 3000);
+  }, []);
 
-  const handleFileSelect = useCallback(async (file: File) => {
+  // Gestion de l'upload
+  const handleFileUpload = async (file: File) => {
+    if (disabled) return;
+
+    setUploadState({
+      isUploading: true,
+      progress: 0,
+      error: null,
+      success: null
+    });
+
     try {
-      setUploadStatus({ type: 'uploading', message: 'Préparation du fichier...' });
-
-      // Validation
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        throw new Error(`Le fichier doit faire moins de ${maxSizeMB}MB`);
+      // Validation de base
+      if (!acceptedFormats.includes(file.type)) {
+        throw new Error(`Format non supporté. Utilisez: ${acceptedFormats.join(', ')}`);
       }
 
-      // Prévisualisation
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        throw new Error(`Fichier trop volumineux. Maximum: ${maxSizeMB}MB`);
+      }
+
+      // Générer un aperçu
       if (showPreview) {
-        const preview = await imageUploadService.previewImage(file);
+        const preview = await imageUploadService.generatePreview(file);
         setPreviewUrl(preview);
       }
 
-      setUploadStatus({ type: 'uploading', message: 'Upload en cours...', progress: 50 });
+      // Upload vers Cloudinary
+      const imageData = await imageUploadService.uploadImage(file);
 
-      // Upload
-      const result = await imageUploadService.uploadImage(file);
-      
-      setUploadStatus({ type: 'success', message: 'Image uploadée avec succès!' });
-      setPreviewUrl(result.imageUrl);
-      onImageUploaded(result.imageUrl, result.publicId);
-
-      // Reset status after 3 seconds
-      setTimeout(() => {
-        setUploadStatus({ type: 'idle' });
-      }, 3000);
-
-    } catch (error) {
-      console.error('Erreur upload:', error);
-      setUploadStatus({ 
-        type: 'error', 
-        message: error instanceof Error ? error.message : 'Erreur lors de l\'upload' 
+      // Succès
+      setUploadState({
+        isUploading: false,
+        progress: 100,
+        error: null,
+        success: 'Image uploadée avec succès!'
       });
-      setPreviewUrl(null);
 
-      // Reset error after 5 seconds
-      setTimeout(() => {
-        setUploadStatus({ type: 'idle' });
-      }, 5000);
-    }
-  }, [maxSizeMB, showPreview, onImageUploaded]);
-
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  }, [handleFileSelect]);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleFileSelect(file);
-    }
-  }, [handleFileSelect]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-  }, []);
-
-  const handleRemoveImage = useCallback(() => {
-    setPreviewUrl(null);
-    setUploadStatus({ type: 'idle' });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    onImageRemoved?.();
-  }, [onImageRemoved]);
-
-  const openFileDialog = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const getStatusIcon = () => {
-    switch (uploadStatus.type) {
-      case 'uploading':
-        return <Loader2 className="w-6 h-6 animate-spin text-blue-500" />;
-      case 'success':
-        return <Check className="w-6 h-6 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="w-6 h-6 text-red-500" />;
-      default:
-        return <Upload className="w-6 h-6 text-gray-400" />;
+      // Mettre à jour l'URL de prévisualisation avec l'URL Cloudinary
+      setPreviewUrl(imageData.imageUrl);
+      
+      // Notifier le parent
+      onImageUpload(imageData);
+      
+      resetMessages();
+    } catch (error: any) {
+      console.error('Erreur upload:', error);
+      setUploadState({
+        isUploading: false,
+        progress: 0,
+        error: error.message || 'Erreur lors de l\'upload',
+        success: null
+      });
+      
+      // Réinitialiser l'aperçu en cas d'erreur
+      setPreviewUrl(currentImageUrl || null);
+      
+      resetMessages();
     }
   };
 
-  const getStatusColor = () => {
-    switch (uploadStatus.type) {
-      case 'uploading':
-        return 'border-blue-300 bg-blue-50';
-      case 'success':
-        return 'border-green-300 bg-green-50';
-      case 'error':
-        return 'border-red-300 bg-red-50';
-      default:
-        return dragActive ? 'border-primary bg-primary/5' : 'border-gray-300 bg-gray-50';
+  // Supprimer l'image
+  const handleRemoveImage = () => {
+    setPreviewUrl(null);
+    if (onImageRemove) {
+      onImageRemove();
+    }
+    // Reset du file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragIn = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setDragActive(true);
+    }
+  }, []);
+
+  const handleDragOut = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  }, []);
+
+  // Click handler pour ouvrir le file picker
+  const handleClick = () => {
+    if (!disabled && fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Zone de drop */}
+    <div className={`w-full ${className}`}>
+      {/* Zone d'upload */}
       <div
         className={`
-          relative rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer
-          ${aspectRatioClasses[aspectRatio]}
-          ${getStatusColor()}
-          hover:border-primary hover:bg-primary/5
+          relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200
+          ${dragActive ? 'border-primary bg-primary/5' : 'border-gray-300'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary hover:bg-primary/5'}
+          ${uploadState.isUploading ? 'pointer-events-none' : ''}
         `}
+        onClick={handleClick}
+        onDragEnter={handleDragIn}
+        onDragLeave={handleDragOut}
+        onDragOver={handleDrag}
         onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onClick={openFileDialog}
       >
+        {/* Input file caché */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
-          onChange={handleFileInputChange}
+          accept={acceptedFormats.join(',')}
+          onChange={(e) => e.target.files && handleFileUpload(e.target.files[0])}
           className="hidden"
-          aria-label="Sélectionner une image"
+          disabled={disabled}
         />
 
-        {previewUrl ? (
-          // Prévisualisation de l'image
-          <div className="relative w-full h-full group">
-            <img
-              src={previewUrl}
-              alt="Prévisualisation"
-              className="w-full h-full object-cover rounded-lg"
-            />
-            
-            {/* Overlay avec boutons */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center space-x-4">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openFileDialog();
-                }}
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"
-                aria-label="Changer l'image"
-              >
-                <ImageIcon className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveImage();
-                }}
-                className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"
-                aria-label="Supprimer l'image"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Status indicator */}
-            {uploadStatus.type === 'uploading' && (
-              <div className="absolute inset-0 bg-black/70 rounded-lg flex items-center justify-center">
-                <div className="text-center text-white">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                  <p className="text-sm">{uploadStatus.message}</p>
-                  {uploadStatus.progress && (
-                    <div className="w-32 h-2 bg-white/20 rounded-full mt-2 mx-auto">
-                      <div 
-                        className="h-full bg-white rounded-full transition-all duration-300"
-                        style={{ width: `${uploadStatus.progress}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
+        {/* Contenu de la zone d'upload */}
+        {uploadState.isUploading ? (
+          <div className="flex flex-col items-center space-y-3">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-sm text-gray-600">Upload en cours...</p>
+            {uploadState.progress > 0 && (
+              <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadState.progress}%` }}
+                />
               </div>
             )}
           </div>
+        ) : previewUrl && showPreview ? (
+          <div className="relative">
+            <img
+              src={previewUrl}
+              alt="Aperçu"
+              className="max-h-64 mx-auto rounded-lg shadow-md"
+            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveImage();
+              }}
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         ) : (
-          // Zone de drop vide
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            {getStatusIcon()}
-            
-            <h3 className="mt-4 text-lg font-medium text-gray-900">
-              {uploadStatus.type === 'uploading' 
-                ? 'Upload en cours...' 
-                : 'Ajouter une image'
-              }
-            </h3>
-            
-            <p className="mt-2 text-sm text-gray-500">
-              {uploadStatus.type === 'uploading' 
-                ? uploadStatus.message
-                : 'Glissez-déposez une image ici, ou cliquez pour sélectionner'
-              }
-            </p>
-
-            <p className="mt-1 text-xs text-gray-400">
-              PNG, JPG, GIF, WebP jusqu'à {maxSizeMB}MB
-            </p>
+          <div className="flex flex-col items-center space-y-3">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              dragActive ? 'bg-primary/20' : 'bg-gray-100'
+            }`}>
+              {dragActive ? (
+                <Upload className="w-6 h-6 text-primary" />
+              ) : (
+                <ImageIcon className="w-6 h-6 text-gray-400" />
+              )}
+            </div>
+            <div>
+              <p className="text-gray-600">
+                <span className="font-medium text-primary">Cliquez ici</span> ou glissez-déposez
+              </p>
+              <p className="text-sm text-gray-500">
+                {acceptedFormats.map(format => format.split('/')[1].toUpperCase()).join(', ')} - Max {maxSizeMB}MB
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Messages de statut */}
-      {uploadStatus.message && uploadStatus.type !== 'uploading' && (
-        <div className={`p-3 rounded-md flex items-center space-x-2 ${
-          uploadStatus.type === 'success' 
-            ? 'bg-green-50 text-green-800' 
-            : 'bg-red-50 text-red-800'
-        }`}>
-          {getStatusIcon()}
-          <span className="text-sm">{uploadStatus.message}</span>
+      {/* Messages d'erreur et de succès */}
+      {uploadState.error && (
+        <div className="mt-3 bg-red-50 border-l-4 border-red-500 p-3 rounded-r-md animate-fadeIn">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+            <p className="text-red-800 text-sm">{uploadState.error}</p>
+          </div>
         </div>
       )}
 
-      {/* Barre de progression pour l'upload */}
-      {uploadStatus.type === 'uploading' && uploadStatus.progress && (
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${uploadStatus.progress}%` }}
-          />
+      {uploadState.success && (
+        <div className="mt-3 bg-green-50 border-l-4 border-green-500 p-3 rounded-r-md animate-fadeIn">
+          <div className="flex items-center">
+            <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+            <p className="text-green-800 text-sm">{uploadState.success}</p>
+          </div>
         </div>
       )}
+
+      {/* CSS pour l'animation */}
+      <style >{`
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
