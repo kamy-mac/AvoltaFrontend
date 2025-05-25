@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import AdminHeader from '../../components/admin/AdminHeader';
+import AdminHeader from './AdminHeader';
 import { useAuth } from '../../context/AuthContext';
 import { 
   FileText, 
