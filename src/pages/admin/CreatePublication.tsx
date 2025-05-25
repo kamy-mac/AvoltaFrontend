@@ -34,7 +34,7 @@ import {
 import publicationService from "../../services/publication.service";
 import { useAuth } from "../../context/AuthContext";
 import ImageUpload from "./ImageUpload"; // Import du composant ImageUpload
-import { ImageUploadResponse } from "../../services/imageUpload.service";
+import {ImageUploadResponse} from "../../services/imageUpload.service";
 
 // Guide d'utilisation pour le créateur de publication
 const CreatePublicationGuide = () => {
@@ -214,12 +214,12 @@ export default function CreatePublication() {
   };
 
   // Gestionnaire pour l'upload d'image Cloudinary
-  const handleImageUploaded = (imageData: ImageUploadResponse) => {
-    console.log("Image uploaded to Cloudinary:", imageData);
-    setImageData(imageData);
+  const handleImageUploaded = (imageUrl: string, publicId: string) => {
+    console.log("Image uploaded to Cloudinary:", { imageUrl, publicId });
+    setImageData({ imageUrl, publicId } as ImageUploadResponse);
     setPublication(prev => ({
       ...prev,
-      imageUrl: imageData.imageUrl
+      imageUrl: imageUrl
     }));
   };
 
