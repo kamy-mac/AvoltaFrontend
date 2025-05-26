@@ -7,15 +7,13 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 
 // Base configuration
 const API_BASE_URL = import.meta.env.PROD 
-  ? 'https://avoltabackend-production.up.railway.app/api/api'
+  ? 'https://avoltabackend-production.up.railway.app/api'
   : 'http://localhost:8090/api';
-const REQUEST_TIMEOUT = 30000; // 15 seconds timeout
+const REQUEST_TIMEOUT = 30000;
 
 class ApiService {
   private api: AxiosInstance;
   private static instance: ApiService;
-  post: any;
-  setToken: any;
 
   private constructor() {
     this.api = axios.create({
@@ -53,7 +51,6 @@ class ApiService {
       (error: AxiosError) => {
         console.error(`API Error for ${error.config?.url}:`, error);
 
-        // Handle authentication errors
         if (error.response?.status === 401) {
           console.log("Unauthorized access, redirecting to login");
           localStorage.removeItem("token");
@@ -64,13 +61,20 @@ class ApiService {
           );
         }
 
-        // Create a more informative error message
         let errorMessage = "An unexpected error occurred";
 
-        if ((error.response?.data as { message?: string })?.message) {
-          errorMessage =
-            (error.response?.data as { message?: string })?.message ||
-            errorMessage;
+        // Améliorer l'extraction du message d'erreur
+        if (error.response?.data) {
+          const errorData = error.response.data as any;
+          if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.details) {
+            errorMessage = errorData.details;
+          }
         } else if (error.message) {
           errorMessage = error.message;
         }
@@ -88,47 +92,116 @@ class ApiService {
     return ApiService.instance;
   }
 
-  /**
-   * Get the correct image URL with proper base path
-   * @param filename The filename returned by the upload endpoint
-   * @returns Complete URL to access the image
-   */
-  public getImageUrl(filename: string): string {
-    if (!filename) return '';
-    
-    // Si le filename contient déjà l'URL complète, le retourner tel quel
-    if (filename.startsWith('http')) {
-      return filename;
-    }
-    
-    // Construire l'URL correcte pour les images
-    const baseUrl = import.meta.env.PROD 
-      ? 'https://avoltabackend-production.up.railway.app/api/api'
-      : 'http://localhost:8090/api';
-    
-    return `${baseUrl}/uploads/${filename}`;
+  public async get(endpoint: string): Promise<AxiosResponse> {
+    return this.api.get(endpoint);
   }
 
-  /**
-   * Upload an image file with proper URL handling
-   * @param file Image file to upload
-   * @returns Response with the uploaded file URL
-   */
+  public async post(endpoint: string, data?: any, isFormData = false): Promise<AxiosResponse> {
+    const config = isFormData ? {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    } : {};
+    
+    return this.api.post(endpoint, data, config);
+  }
+
+  public async put(endpoint: string, data?: any): Promise<AxiosResponse> {
+    return this.api.put(endpoint, data);
+  }
+
+  public async delete(endpoint: string): Promise<AxiosResponse> {
+    return this.api.delete(endpoint);
+  }
+
+  // MÉTHODE SPÉCIFIQUE POUR CLOUDINARY - AMÉLIORÉE
+  public async uploadToCloudinary(file: File): Promise<AxiosResponse> {
+    try {
+      console.log("Uploading to Cloudinary via backend");
+      console.log("File details:", {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      // Ajouter des paramètres optionnels pour Cloudinary
+      formData.append("upload_preset", ""); // Si vous avez un preset
+      formData.append("folder", "publications"); // Optionnel: organiser en dossiers
+      
+      const response = await this.api.post("/images/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        },
+        timeout: 60000, // Timeout plus long pour les uploads
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
+        }
+      });
+
+      console.log("Cloudinary upload response:", response.data);
+      
+      // Validation de la réponse
+      if (!response.data) {
+        throw new Error("Réponse vide du serveur");
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Cloudinary upload failed:", error);
+      
+      // Améliorer la gestion d'erreur pour Cloudinary
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 400) {
+          const errorData = error.response.data as any;
+          if (typeof errorData === 'string' && errorData.includes('Invalid extension in transformation')) {
+            throw new Error("Erreur de configuration Cloudinary. Veuillez contacter l'administrateur.");
+          } else if (errorData.message) {
+            throw new Error(`Erreur Cloudinary: ${errorData.message}`);
+          }
+        } else if (error.response?.status === 413) {
+          throw new Error("Le fichier est trop volumineux pour être uploadé");
+        } else if (error.response?.status === 415) {
+          throw new Error("Type de fichier non supporté");
+        }
+      }
+      
+      throw error;
+    }
+  }
+
+  // GARDER VOTRE MÉTHODE EXISTANTE POUR LA COMPATIBILITÉ
   public async uploadImage(file: File): Promise<AxiosResponse> {
     try {
       console.log("Sending upload file request");
+      console.log("File details:", {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
       const formData = new FormData();
       formData.append("file", file);
       
       const response = await this.api.post("/upload/image", formData, {
         headers: {
           "Content-Type": "multipart/form-data"
+        },
+        timeout: 60000, // Timeout plus long pour les uploads
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
         }
       });
 
-      // Log pour déboguer la réponse
       console.log("Upload response:", response.data);
-      
       return response;
     } catch (error) {
       console.error("Image upload failed:", error);
@@ -136,11 +209,33 @@ class ApiService {
     }
   }
 
-  /**
-   * Get image with authentication
-   * @param filename Image filename
-   * @returns Blob response for the image
-   */
+  // Méthode pour définir le token
+  public setToken(token: string): void {
+    localStorage.setItem("token", token);
+  }
+
+  // Méthode pour supprimer le token
+  public clearToken(): void {
+    localStorage.removeItem("token");
+  }
+
+  // Améliorer getImageUrl pour gérer les URLs Cloudinary
+  public getImageUrl(filename: string): string {
+    if (!filename) return '';
+    
+    // Si c'est déjà une URL complète (Cloudinary par exemple)
+    if (filename.startsWith('http')) {
+      return filename;
+    }
+    
+    // Pour les fichiers locaux
+    const baseUrl = import.meta.env.PROD 
+      ? 'https://avoltabackend-production.up.railway.app'
+      : 'http://localhost:8090';
+    
+    return `${baseUrl}/api/uploads/${filename}`;
+  }
+
   public async getImage(filename: string): Promise<Blob> {
     try {
       const response = await this.api.get(`/uploads/${filename}`, {
@@ -152,8 +247,6 @@ class ApiService {
       throw error;
     }
   }
-
-  // ... resto de vos méthodes existantes ...
 
   // Authentication
   public async login(email: string, password: string): Promise<AxiosResponse> {

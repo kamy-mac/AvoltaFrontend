@@ -34,12 +34,12 @@ import {
 import publicationService from "../../services/publication.service";
 import { useAuth } from "../../context/AuthContext";
 import ImageUpload from "./ImageUpload"; // Import du composant ImageUpload
-import {ImageUploadResponse} from "../../services/imageUpload.service";
+import { ImageUploadResponse } from "../../services/imageUpload.service";
 
 // Guide d'utilisation pour le créateur de publication
 const CreatePublicationGuide = () => {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   return (
     <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg shadow-sm border border-purple-100">
       <button
@@ -48,37 +48,85 @@ const CreatePublicationGuide = () => {
       >
         <div className="flex items-center">
           <HelpCircle className="h-5 w-5 text-purple-600 mr-2" />
-          <h3 className="text-lg font-medium text-gray-800">Guide de création d'une publication</h3>
+          <h3 className="text-lg font-medium text-gray-800">
+            Guide de création d'une publication
+          </h3>
         </div>
-        <ChevronDown className={`h-5 w-5 text-purple-600 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-5 w-5 text-purple-600 transition-transform ${
+            isOpen ? "transform rotate-180" : ""
+          }`}
+        />
       </button>
-      
+
       {isOpen && (
         <div className="p-4 pt-0 text-sm text-gray-700 space-y-3">
           <p className="flex items-start">
             <Info className="h-4 w-4 text-purple-600 mr-2 mt-0.5 flex-shrink-0" />
-            <span>Utilisez ce formulaire pour créer des publications qui apparaîtront sur le site.</span>
+            <span>
+              Utilisez ce formulaire pour créer des publications qui
+              apparaîtront sur le site.
+            </span>
           </p>
-          
+
           <div className="pl-6 space-y-2">
             <p className="font-semibold text-purple-800">Instructions :</p>
             <ul className="list-disc pl-5 space-y-1.5">
-              <li><span className="font-medium">Titre et contenu</span> : Donnez un titre clair et rédigez un contenu détaillé pour votre publication.</li>
-              <li><span className="font-medium">Formatage</span> : Utilisez les outils de formatage (gras, italique, listes) pour améliorer la lisibilité.</li>
-              <li><span className="font-medium">Catégorie et tags</span> : Classifiez votre publication pour faciliter la recherche et la navigation.</li>
-              <li><span className="font-medium">Image</span> : Téléchargez une image ou fournissez une URL pour rendre votre publication plus attrayante.</li>
-              <li><span className="font-medium">Dates de validité</span> : Définissez la période pendant laquelle la publication sera visible.</li>
-              <li><span className="font-medium">Newsletter</span> : Cochez l'option pour envoyer automatiquement votre publication aux abonnés.</li>
-              <li><span className="font-medium">Prévisualisation</span> : Utilisez le bouton <Eye className="h-4 w-4 inline text-purple-600" /> pour vérifier l'apparence avant publication.</li>
+              <li>
+                <span className="font-medium">Titre et contenu</span> : Donnez
+                un titre clair et rédigez un contenu détaillé pour votre
+                publication.
+              </li>
+              <li>
+                <span className="font-medium">Formatage</span> : Utilisez les
+                outils de formatage (gras, italique, listes) pour améliorer la
+                lisibilité.
+              </li>
+              <li>
+                <span className="font-medium">Catégorie et tags</span> :
+                Classifiez votre publication pour faciliter la recherche et la
+                navigation.
+              </li>
+              <li>
+                <span className="font-medium">Image</span> : Téléchargez une
+                image ou fournissez une URL pour rendre votre publication plus
+                attrayante.
+              </li>
+              <li>
+                <span className="font-medium">Dates de validité</span> :
+                Définissez la période pendant laquelle la publication sera
+                visible.
+              </li>
+              <li>
+                <span className="font-medium">Newsletter</span> : Cochez
+                l'option pour envoyer automatiquement votre publication aux
+                abonnés.
+              </li>
+              <li>
+                <span className="font-medium">Prévisualisation</span> : Utilisez
+                le bouton <Eye className="h-4 w-4 inline text-purple-600" />{" "}
+                pour vérifier l'apparence avant publication.
+              </li>
             </ul>
           </div>
-          
+
           <div className="pl-6 mt-3">
-            <p className="font-semibold text-purple-800">Processus de validation :</p>
+            <p className="font-semibold text-purple-800">
+              Processus de validation :
+            </p>
             <ul className="list-disc pl-5 space-y-1.5">
-              <li>Les publications créées par les administrateurs sont soumises à validation par un super administrateur.</li>
-              <li>Les publications créées par les super administrateurs sont publiées immédiatement.</li>
-              <li>Une fois publiée, votre publication sera visible pendant la période définie.</li>
+              <li>
+                Les publications créées par les administrateurs sont soumises à
+                validation par un super administrateur.
+              </li>
+              <li>
+                Les publications créées par les super administrateurs sont
+                publiées immédiatement.
+              </li>
+              <li>
+                Une fois publiée, votre publication sera visible pendant la
+                période définie.
+              </li>
             </ul>
           </div>
         </div>
@@ -108,13 +156,16 @@ export default function CreatePublication() {
     content: "",
     imageUrl: "",
     validFrom: new Date().toISOString().split("T")[0], // Format YYYY-MM-DD
-    validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // Par défaut: 30 jours
+    validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0], // Par défaut: 30 jours
     category: "news",
     sendNewsletter: false,
     tags: [],
     authorName: user?.username || "",
     authorEmail: user?.email || "",
   });
+  const [imageUrl, setImageUrl] = useState("");
 
   // States pour l'interface
   const [previewMode, setPreviewMode] = useState(false);
@@ -139,7 +190,9 @@ export default function CreatePublication() {
   // Vérification du contenu lors de la modification
   const checkContent = (content: string) => {
     if (content.length > 0 && content.length < 50) {
-      setContentWarning("Le contenu est un peu court. Envisagez d'ajouter plus d'informations pour une meilleure communication.");
+      setContentWarning(
+        "Le contenu est un peu court. Envisagez d'ajouter plus d'informations pour une meilleure communication."
+      );
     } else {
       setContentWarning(null);
     }
@@ -150,22 +203,27 @@ export default function CreatePublication() {
     setError(null);
     setIsLoading(true);
     setSuccess(null);
-    
+
     try {
       // Validation des dates
       const validFromDate = new Date(publication.validFrom);
       const validToDate = new Date(publication.validTo);
-      
+
       if (validToDate <= validFromDate) {
-        throw new Error("La date de fin doit être postérieure à la date de début.");
+        throw new Error(
+          "La date de fin doit être postérieure à la date de début."
+        );
       }
 
       // Formatage au format ISO (YYYY-MM-DDTHH:mm:ss.sssZ) que le backend peut parser en LocalDateTime
       const formattedValidFrom = validFromDate.toISOString();
       const formattedValidTo = validToDate.toISOString();
 
-      console.log("Creating publication with Cloudinary image:", publication.imageUrl);
-      
+      console.log(
+        "Creating publication with Cloudinary image:",
+        publication.imageUrl
+      );
+
       const createdPublication = await publicationService.createPublication({
         title: publication.title,
         content: publication.content,
@@ -175,21 +233,26 @@ export default function CreatePublication() {
         category: publication.category,
         sendNewsletter: publication.sendNewsletter,
       });
-      
+
       setSuccess("Publication créée avec succès!");
       console.log("Publication created:", createdPublication);
 
       if (user?.role === "admin") {
-        setSuccess("Votre publication a été soumise et est en attente de validation par un super administrateur.");
+        setSuccess(
+          "Votre publication a été soumise et est en attente de validation par un super administrateur."
+        );
       }
-      
+
       // Redirection après un court délai
       setTimeout(() => {
         navigate("/admin/publications");
       }, 2000);
     } catch (error: any) {
       console.error("Error creating publication:", error);
-      setError(error.response?.data?.message || "Une erreur est survenue lors de la création de la publication.");
+      setError(
+        error.response?.data?.message ||
+          "Une erreur est survenue lors de la création de la publication."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +265,7 @@ export default function CreatePublication() {
   ) => {
     const { name, value } = e.target;
     setPublication((prev) => ({ ...prev, [name]: value }));
-    
+
     if (name === "content") {
       checkContent(value);
     }
@@ -217,9 +280,9 @@ export default function CreatePublication() {
   const handleImageUploaded = (imageUrl: string, publicId: string) => {
     console.log("Image uploaded to Cloudinary:", { imageUrl, publicId });
     setImageData({ imageUrl, publicId } as ImageUploadResponse);
-    setPublication(prev => ({
+    setPublication((prev) => ({
       ...prev,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
     }));
   };
 
@@ -227,9 +290,9 @@ export default function CreatePublication() {
   const handleImageRemoved = () => {
     console.log("Image removed");
     setImageData(null);
-    setPublication(prev => ({
+    setPublication((prev) => ({
       ...prev,
-      imageUrl: ""
+      imageUrl: "",
     }));
   };
 
@@ -295,7 +358,7 @@ export default function CreatePublication() {
       formattedText +
       textarea.value.substring(end);
     setPublication((prev) => ({ ...prev, content: newContent }));
-    
+
     // Vérifier le contenu
     checkContent(newContent);
 
@@ -306,49 +369,74 @@ export default function CreatePublication() {
       textarea.setSelectionRange(newPosition, newPosition);
     }, 0);
   };
-  
+
   // Fonction pour formater le contenu Markdown pour la prévisualisation
   const formatMarkdown = (text: string) => {
     // C'est une version simplifiée, dans un cas réel on utiliserait une bibliothèque comme marked
     let formattedText = text;
-    
+
     // Gras
-    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+    formattedText = formattedText.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>"
+    );
+
     // Italique
-    formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
+    formattedText = formattedText.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
     // Titres
-    formattedText = formattedText.replace(/^# (.*?)$/gm, '<h1 class="text-3xl font-bold mb-4">$1</h1>');
-    formattedText = formattedText.replace(/^## (.*?)$/gm, '<h2 class="text-2xl font-bold mb-3">$1</h2>');
-    
+    formattedText = formattedText.replace(
+      /^# (.*?)$/gm,
+      '<h1 class="text-3xl font-bold mb-4">$1</h1>'
+    );
+    formattedText = formattedText.replace(
+      /^## (.*?)$/gm,
+      '<h2 class="text-2xl font-bold mb-3">$1</h2>'
+    );
+
     // Citations
-    formattedText = formattedText.replace(/^> (.*?)$/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic my-4">$1</blockquote>');
-    
+    formattedText = formattedText.replace(
+      /^> (.*?)$/gm,
+      '<blockquote class="border-l-4 border-gray-300 pl-4 italic my-4">$1</blockquote>'
+    );
+
     // Liens
-    formattedText = formattedText.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-purple-600 hover:underline">$1</a>');
-    
+    formattedText = formattedText.replace(
+      /\[(.*?)\]\((.*?)\)/g,
+      '<a href="$2" class="text-purple-600 hover:underline">$1</a>'
+    );
+
     // Listes à puces
-    formattedText = formattedText.replace(/^- (.*?)$/gm, '<li class="ml-5">$1</li>');
-    
+    formattedText = formattedText.replace(
+      /^- (.*?)$/gm,
+      '<li class="ml-5">$1</li>'
+    );
+
     // Listes numérotées (simplifié)
-    formattedText = formattedText.replace(/^\d\. (.*?)$/gm, '<li class="ml-5">$1</li>');
-    
+    formattedText = formattedText.replace(
+      /^\d\. (.*?)$/gm,
+      '<li class="ml-5">$1</li>'
+    );
+
     // Sauts de ligne
-    formattedText = formattedText.replace(/\n/g, '<br />');
-    
+    formattedText = formattedText.replace(/\n/g, "<br />");
+
     return formattedText;
   };
 
   const handleCancel = () => {
-    if (window.confirm("Voulez-vous vraiment annuler ? Les modifications non enregistrées seront perdues.")) {
+    if (
+      window.confirm(
+        "Voulez-vous vraiment annuler ? Les modifications non enregistrées seront perdues."
+      )
+    ) {
       navigate("/admin/publications");
     }
   };
 
   const handleSaveDraft = () => {
     // Implémentation fictive pour sauvegarder un brouillon
-    localStorage.setItem('publicationDraft', JSON.stringify(publication));
+    localStorage.setItem("publicationDraft", JSON.stringify(publication));
     alert("Brouillon sauvegardé avec succès!");
   };
 
@@ -362,24 +450,28 @@ export default function CreatePublication() {
           <button
             onClick={() => setPreviewMode(!previewMode)}
             className="px-4 py-2 text-sm font-medium text-white bg-[#6A0DAD] rounded-md hover:bg-[#5a0b91] transition-colors flex items-center shadow-sm"
-            title={previewMode ? "Retourner à l'édition" : "Prévisualiser la publication"}
+            title={
+              previewMode
+                ? "Retourner à l'édition"
+                : "Prévisualiser la publication"
+            }
           >
             <Eye className="w-4 h-4 mr-2" />
             {previewMode ? "Éditer" : "Prévisualiser"}
           </button>
         </div>
       </div>
-      
+
       {/* Guide d'utilisation */}
       <CreatePublicationGuide />
-      
+
       {error && (
         <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 flex items-start">
           <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-2" />
           <p className="text-red-700">{error}</p>
         </div>
       )}
-      
+
       {success && (
         <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 flex items-start">
           <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 mr-2" />
@@ -407,11 +499,11 @@ export default function CreatePublication() {
           <div className="flex justify-between items-start mb-6">
             <div>
               <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-2">
-                {publication.category === "news" 
-                  ? "Actualités" 
-                  : publication.category === "events" 
-                    ? "Événements" 
-                    : "Communiqués de presse"}
+                {publication.category === "news"
+                  ? "Actualités"
+                  : publication.category === "events"
+                  ? "Événements"
+                  : "Communiqués de presse"}
               </span>
               <div className="flex items-center text-sm text-gray-500 space-x-4">
                 <span className="flex items-center">
@@ -421,7 +513,8 @@ export default function CreatePublication() {
                 </span>
                 <span className="flex items-center">
                   <Clock className="w-4 h-4 mr-1" />
-                  {publication.validTo && `au ${formatDate(publication.validTo)}`}
+                  {publication.validTo &&
+                    `au ${formatDate(publication.validTo)}`}
                 </span>
                 {publication.sendNewsletter && (
                   <span className="flex items-center">
@@ -449,7 +542,8 @@ export default function CreatePublication() {
               />
               {imageData && (
                 <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                  {imageData.originalFileName} • {Math.round(imageData.fileSize / 1024)}KB
+                  {imageData.originalFileName} •{" "}
+                  {Math.round(imageData.fileSize / 1024)}KB
                 </div>
               )}
             </div>
@@ -473,9 +567,13 @@ export default function CreatePublication() {
           <h2 className="text-2xl font-bold mb-4">
             {publication.title || "Titre de la publication"}
           </h2>
-          <div 
+          <div
             className="prose max-w-none mb-6"
-            dangerouslySetInnerHTML={{ __html: formatMarkdown(publication.content) || "Contenu de la publication..." }}
+            dangerouslySetInnerHTML={{
+              __html:
+                formatMarkdown(publication.content) ||
+                "Contenu de la publication...",
+            }}
           ></div>
 
           {/* Boutons de navigation */}
@@ -550,7 +648,9 @@ export default function CreatePublication() {
                   />
                   <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">L'email est automatiquement défini par votre compte</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  L'email est automatiquement défini par votre compte
+                </p>
               </div>
             </div>
 
@@ -710,16 +810,20 @@ export default function CreatePublication() {
                 Image de couverture
               </label>
               <ImageUpload
-                onImageUploaded={handleImageUploaded}
-                currentImageUrl={publication.imageUrl}
-                onImageRemoved={handleImageRemoved}
-                className="w-full"
+                onImageSelect={(url) => setImageUrl(url)}
+                currentImage={imageUrl}
+                className="mb-4"
               />
               {imageData && (
                 <div className="mt-2 text-sm text-gray-500">
                   <p>Image stockée sur Cloudinary:</p>
-                  <p className="font-mono text-xs break-all">{imageData.publicId}</p>
-                  <p>Dimensions: {imageData.width}×{imageData.height}px • Taille: {Math.round(imageData.fileSize / 1024)}KB</p>
+                  <p className="font-mono text-xs break-all">
+                    {imageData.publicId}
+                  </p>
+                  <p>
+                    Dimensions: {imageData.width}×{imageData.height}px • Taille:{" "}
+                    {Math.round(imageData.fileSize / 1024)}KB
+                  </p>
                 </div>
               )}
             </div>
@@ -788,7 +892,8 @@ export default function CreatePublication() {
                     Envoyer par newsletter aux abonnés
                   </label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Cette option enverra automatiquement un email aux personnes inscrites à la newsletter
+                    Cette option enverra automatiquement un email aux personnes
+                    inscrites à la newsletter
                   </p>
                 </div>
               </div>
@@ -830,9 +935,25 @@ export default function CreatePublication() {
                 >
                   {isLoading ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Publication en cours...
                     </>

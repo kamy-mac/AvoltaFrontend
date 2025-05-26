@@ -1,276 +1,288 @@
-
-
-import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
-import imageUploadService, { ImageUploadResponse } from '../../services/imageUpload.service';
+import React, { useState, useRef } from 'react';
+import { Upload, X, Link2, Image as ImageIcon, Loader2, Check, AlertTriangle } from 'lucide-react';
+import imageUploadService from '../../services/imageUpload.service';
 
 interface ImageUploadProps {
-  onImageUpload: (imageData: ImageUploadResponse) => void;
-  onImageRemove?: () => void;
-  currentImageUrl?: string;
-  disabled?: boolean;
-  maxSizeMB?: number;
-  acceptedFormats?: string[];
-  showPreview?: boolean;
+  onImageSelect: (imageUrl: string) => void;
+  currentImage?: string;
   className?: string;
 }
 
-interface UploadState {
-  isUploading: boolean;
-  progress: number;
-  error: string | null;
-  success: string | null;
-}
+type UploadMode = 'file' | 'url';
 
-export default function ImageUpload({
-  onImageUpload,
-  onImageRemove,
-  currentImageUrl,
-  disabled = false,
-  maxSizeMB = 10,
-  acceptedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-  showPreview = true,
-  className = ''
-}: ImageUploadProps) {
-  const [uploadState, setUploadState] = useState<UploadState>({
-    isUploading: false,
-    progress: 0,
-    error: null,
-    success: null
-  });
-  
+export default function ImageUpload({ onImageSelect, currentImage, className = '' }: ImageUploadProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  const [mode, setMode] = useState<UploadMode>('file');
+  const [imageUrl, setImageUrl] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset des messages après 3 secondes
-  const resetMessages = useCallback(() => {
-    setTimeout(() => {
-      setUploadState(prev => ({ ...prev, error: null, success: null }));
-    }, 3000);
-  }, []);
-
-  // Gestion de l'upload
   const handleFileUpload = async (file: File) => {
-    if (disabled) return;
-
-    setUploadState({
-      isUploading: true,
-      progress: 0,
-      error: null,
-      success: null
-    });
-
     try {
-      // Validation de base
-      if (!acceptedFormats.includes(file.type)) {
-        throw new Error(`Format non supporté. Utilisez: ${acceptedFormats.join(', ')}`);
+      setIsUploading(true);
+      setError(null);
+      setSuccess(null);
+      setUploadProgress(0);
+
+      // Simuler le progrès
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      try {
+        // Essayer d'abord Cloudinary
+        const result = await imageUploadService.uploadImage(file);
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        
+        setPreviewUrl(result.imageUrl);
+        onImageSelect(result.imageUrl);
+        setSuccess('Image uploadée avec succès via Cloudinary!');
+      } catch (cloudinaryError) {
+        console.warn('Cloudinary upload failed, trying classic upload:', cloudinaryError);
+        
+        // Fallback vers l'upload classique
+        const result = await imageUploadService.uploadImageClassic(file);
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        
+        setPreviewUrl(result.imageUrl);
+        onImageSelect(result.imageUrl);
+        setSuccess('Image uploadée avec succès!');
       }
-
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        throw new Error(`Fichier trop volumineux. Maximum: ${maxSizeMB}MB`);
-      }
-
-      // Générer un aperçu
-      if (showPreview) {
-        const preview = await imageUploadService.generatePreview(file);
-        setPreviewUrl(preview);
-      }
-
-      // Upload vers Cloudinary
-      const imageData = await imageUploadService.uploadImage(file);
-
-      // Succès
-      setUploadState({
-        isUploading: false,
-        progress: 100,
-        error: null,
-        success: 'Image uploadée avec succès!'
-      });
-
-      // Mettre à jour l'URL de prévisualisation avec l'URL Cloudinary
-      setPreviewUrl(imageData.imageUrl);
       
-      // Notifier le parent
-      onImageUpload(imageData);
+      setTimeout(() => {
+        setSuccess(null);
+        setUploadProgress(0);
+      }, 3000);
       
-      resetMessages();
-    } catch (error: any) {
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+      setUploadProgress(0);
       console.error('Erreur upload:', error);
-      setUploadState({
-        isUploading: false,
-        progress: 0,
-        error: error.message || 'Erreur lors de l\'upload',
-        success: null
-      });
-      
-      // Réinitialiser l'aperçu en cas d'erreur
-      setPreviewUrl(currentImageUrl || null);
-      
-      resetMessages();
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  // Supprimer l'image
-  const handleRemoveImage = () => {
-    setPreviewUrl(null);
-    if (onImageRemove) {
-      onImageRemove();
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    
+    if (!imageUrl.trim()) {
+      setError('Veuillez entrer une URL d\'image');
+      return;
     }
-    // Reset du file input
+
+    if (!imageUploadService.validateImageUrl(imageUrl)) {
+      setError('URL d\'image invalide');
+      return;
+    }
+
+    setPreviewUrl(imageUrl);
+    onImageSelect(imageUrl);
+    setSuccess('Image ajoutée avec succès!');
+    
+    setTimeout(() => {
+      setSuccess(null);
+    }, 3000);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFileUpload(file);
+    } else {
+      setError('Veuillez déposer un fichier image valide');
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const removeImage = () => {
+    setPreviewUrl(null);
+    setImageUrl('');
+    onImageSelect('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Drag & Drop handlers
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDragIn = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setDragActive(true);
-    }
-  }, []);
-
-  const handleDragOut = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  }, []);
-
-  // Click handler pour ouvrir le file picker
-  const handleClick = () => {
-    if (!disabled && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
   return (
-    <div className={`w-full ${className}`}>
-      {/* Zone d'upload */}
-      <div
-        className={`
-          relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200
-          ${dragActive ? 'border-primary bg-primary/5' : 'border-gray-300'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary hover:bg-primary/5'}
-          ${uploadState.isUploading ? 'pointer-events-none' : ''}
-        `}
-        onClick={handleClick}
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        {/* Input file caché */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={acceptedFormats.join(',')}
-          onChange={(e) => e.target.files && handleFileUpload(e.target.files[0])}
-          className="hidden"
-          disabled={disabled}
-        />
+    <div className={`space-y-4 ${className}`}>
+      {/* Mode Toggle */}
+      <div className="flex bg-gray-100 rounded-lg p-1">
+        <button
+          type="button"
+          onClick={() => setMode('file')}
+          className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            mode === 'file'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Upload fichier
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('url')}
+          className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            mode === 'url'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Link2 className="w-4 h-4 mr-2" />
+          URL image
+        </button>
+      </div>
 
-        {/* Contenu de la zone d'upload */}
-        {uploadState.isUploading ? (
-          <div className="flex flex-col items-center space-y-3">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="text-sm text-gray-600">Upload en cours...</p>
-            {uploadState.progress > 0 && (
-              <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadState.progress}%` }}
-                />
+      {/* Messages */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center">
+          <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center">
+          <Check className="w-4 h-4 mr-2 flex-shrink-0" />
+          {success}
+        </div>
+      )}
+
+      {/* File Upload Mode */}
+      {mode === 'file' && (
+        <div
+          className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+            dragActive
+              ? 'border-[#6A0DAD] bg-purple-50'
+              : 'border-gray-300 hover:border-gray-400'
+          } ${isUploading ? 'pointer-events-none' : ''}`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={isUploading}
+          />
+          
+          <div className="text-center">
+            {isUploading ? (
+              <div className="space-y-4">
+                <Loader2 className="mx-auto h-12 w-12 text-[#6A0DAD] animate-spin" />
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#6A0DAD] h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-600">Upload en cours... {uploadProgress}%</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div>
+                  <p className="text-lg font-medium text-gray-900">
+                    Glissez votre image ici
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    ou <span className="text-[#6A0DAD] hover:underline">cliquez pour parcourir</span>
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, GIF jusqu'à 10MB
+                </p>
               </div>
             )}
           </div>
-        ) : previewUrl && showPreview ? (
-          <div className="relative">
-            <img
-              src={previewUrl}
-              alt="Aperçu"
-              className="max-h-64 mx-auto rounded-lg shadow-md"
+        </div>
+      )}
+
+      {/* URL Mode */}
+      {mode === 'url' && (
+        <form onSubmit={handleUrlSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+              URL de l'image
+            </label>
+            <input
+              type="url"
+              id="imageUrl"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://exemple.com/image.jpg"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#6A0DAD] focus:border-[#6A0DAD]"
+              required
             />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveImage();
-              }}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-              type="button"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
-        ) : (
-          <div className="flex flex-col items-center space-y-3">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              dragActive ? 'bg-primary/20' : 'bg-gray-100'
-            }`}>
-              {dragActive ? (
-                <Upload className="w-6 h-6 text-primary" />
-              ) : (
-                <ImageIcon className="w-6 h-6 text-gray-400" />
-              )}
-            </div>
-            <div>
-              <p className="text-gray-600">
-                <span className="font-medium text-primary">Cliquez ici</span> ou glissez-déposez
-              </p>
-              <p className="text-sm text-gray-500">
-                {acceptedFormats.map(format => format.split('/')[1].toUpperCase()).join(', ')} - Max {maxSizeMB}MB
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Messages d'erreur et de succès */}
-      {uploadState.error && (
-        <div className="mt-3 bg-red-50 border-l-4 border-red-500 p-3 rounded-r-md animate-fadeIn">
-          <div className="flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-            <p className="text-red-800 text-sm">{uploadState.error}</p>
-          </div>
-        </div>
+          <button
+            type="submit"
+            className="w-full bg-[#6A0DAD] text-white py-2 px-4 rounded-md hover:bg-[#5a0b91] transition-colors"
+          >
+            Ajouter l'image
+          </button>
+        </form>
       )}
 
-      {uploadState.success && (
-        <div className="mt-3 bg-green-50 border-l-4 border-green-500 p-3 rounded-r-md animate-fadeIn">
-          <div className="flex items-center">
-            <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-            <p className="text-green-800 text-sm">{uploadState.success}</p>
-          </div>
+      {/* Image Preview */}
+      {previewUrl && (
+        <div className="relative">
+          <img
+            src={previewUrl}
+            alt="Aperçu"
+            className="w-full h-48 object-cover rounded-md border"
+            onError={() => {
+              setError('Impossible de charger l\'image');
+              setPreviewUrl(null);
+            }}
+          />
+          <button
+            type="button"
+            onClick={removeImage}
+            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
-
-      {/* CSS pour l'animation */}
-      <style >{`
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-in-out;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
