@@ -231,15 +231,77 @@ export default function UserManagement() {
     setSuccess(null);
 
     // Password validation
-    if (newUser.password !== newUser.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+    // Vérification : les mots de passe sont identiques
+if (newUser.password !== newUser.confirmPassword) {
+  setError("❌ Les mots de passe ne correspondent pas.");
+  return;
+}
 
-    if (newUser.password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
+// Règles de sécurité du mot de passe
+const motDePasse = newUser.password;
+const regles = [
+  {
+    test: (mdp) => mdp.length >= 8,
+    message: "• Minimum 8 caractères",
+  },
+  {
+    test: (mdp) => /[A-Z]/.test(mdp),
+    message: "• Au moins 1 lettre majuscule (A-Z)",
+  },
+  {
+    test: (mdp) => /[0-9]/.test(mdp),
+    message: "• Au moins 1 chiffre (0-9)",
+  },
+  {
+    test: (mdp) => /[@#$%&*!?£^]/.test(mdp),
+    message: "• Au moins 1 caractère spécial (@, #, $, %, &, *, !, ?, £, ^)",
+  },
+];
+
+const erreurs = regles
+  .filter((regle) => !regle.test(motDePasse))
+  .map((regle) => regle.message);
+
+if (erreurs.length > 0) {
+  setError(`Le mot de passe doit respecter les critères suivants :\n${erreurs.join('\n')}`);
+  return;
+}
+// Vérification : les mots de passe sont identiques
+if (newUser.password !== newUser.confirmPassword) {
+  setError("❌ Les mots de passe ne correspondent pas.");
+  return;
+}
+
+// Règles de sécurité du mot de passe
+const motDePasse = newUser.password;
+const regles = [
+  {
+    test: (mdp) => mdp.length >= 8,
+    message: "• Minimum 8 caractères",
+  },
+  {
+    test: (mdp) => /[A-Z]/.test(mdp),
+    message: "• Au moins 1 lettre majuscule (A-Z)",
+  },
+  {
+    test: (mdp) => /[0-9]/.test(mdp),
+    message: "• Au moins 1 chiffre (0-9)",
+  },
+  {
+    test: (mdp) => /[@#$%&*!?£^]/.test(mdp),
+    message: "• Au moins 1 caractère spécial (@, #, $, %, &, *, !, ?, £, ^)",
+  },
+];
+
+const erreurs = regles
+  .filter((regle) => !regle.test(motDePasse))
+  .map((regle) => regle.message);
+
+if (erreurs.length > 0) {
+  setError(`Le mot de passe doit respecter les critères suivants :\n${erreurs.join('\n')}`);
+  return;
+}
+
 
     try {
       // Use the register method from authService with uppercase "ADMIN" role
