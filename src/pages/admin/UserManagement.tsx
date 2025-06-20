@@ -230,42 +230,7 @@ export default function UserManagement() {
     setError(null);
     setSuccess(null);
 
-    // Password validation
-    // Vérification : les mots de passe sont identiques
-if (newUser.password !== newUser.confirmPassword) {
-  setError("❌ Les mots de passe ne correspondent pas.");
-  return;
-}
-
-// Règles de sécurité du mot de passe
-const motDePasse = newUser.password;
-const regles = [
-  {
-    test: (mdp) => mdp.length >= 8,
-    message: "• Minimum 8 caractères",
-  },
-  {
-    test: (mdp) => /[A-Z]/.test(mdp),
-    message: "• Au moins 1 lettre majuscule (A-Z)",
-  },
-  {
-    test: (mdp) => /[0-9]/.test(mdp),
-    message: "• Au moins 1 chiffre (0-9)",
-  },
-  {
-    test: (mdp) => /[@#$%&*!?£^]/.test(mdp),
-    message: "• Au moins 1 caractère spécial (@, #, $, %, &, *, !, ?, £, ^)",
-  },
-];
-
-const erreurs = regles
-  .filter((regle) => !regle.test(motDePasse))
-  .map((regle) => regle.message);
-
-if (erreurs.length > 0) {
-  setError(`Le mot de passe doit respecter les critères suivants :\n${erreurs.join('\n')}`);
-  return;
-}
+// Password validation
 // Vérification : les mots de passe sont identiques
 if (newUser.password !== newUser.confirmPassword) {
   setError("❌ Les mots de passe ne correspondent pas.");
@@ -276,19 +241,19 @@ if (newUser.password !== newUser.confirmPassword) {
 const motDePasse = newUser.password;
 const regles = [
   {
-    test: (mdp) => mdp.length >= 8,
+    test: (mdp: string) => mdp.length >= 8,
     message: "• Minimum 8 caractères",
   },
   {
-    test: (mdp) => /[A-Z]/.test(mdp),
+    test: (mdp: string) => /[A-Z]/.test(mdp),
     message: "• Au moins 1 lettre majuscule (A-Z)",
   },
   {
-    test: (mdp) => /[0-9]/.test(mdp),
+    test: (mdp: string) => /[0-9]/.test(mdp),
     message: "• Au moins 1 chiffre (0-9)",
   },
   {
-    test: (mdp) => /[@#$%&*!?£^]/.test(mdp),
+    test: (mdp: string) => /[@#$%&*!?£^]/.test(mdp),
     message: "• Au moins 1 caractère spécial (@, #, $, %, &, *, !, ?, £, ^)",
   },
 ];
